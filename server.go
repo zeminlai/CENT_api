@@ -18,6 +18,11 @@ func main() {
 	e.GET("/users/:id", handlers.GetUser)
 	e.PUT("/users/:id", handlers.UpdateUser)
 	e.DELETE("/users/:id", handlers.DeleteUser)
+
+	// Web Scrape 
+	e.GET("/search", handlers.HandleGoogleSearch)
+	e.GET("/scrape", handlers.HandleWebScrape)
+	
 	storage.InitDB()
 	e.Logger.Fatal(e.Start(":1323"))
 }
