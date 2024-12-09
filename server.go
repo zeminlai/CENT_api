@@ -23,6 +23,13 @@ func main() {
 	e.GET("/search", handlers.HandleGoogleSearch)
 	e.GET("/scrape", handlers.HandleWebScrape)
 	
+	// Notes routes
+	e.POST("/notes", handlers.CreateNote)
+	e.GET("/notes/:id", handlers.GetNote)
+	e.GET("/users/:userId/notes", handlers.GetUserNotes)
+	e.PUT("/notes/:id", handlers.UpdateNote)
+	e.DELETE("/notes/:id/users/:userId", handlers.DeleteNote)
+	
 	storage.InitDB()
 	e.Logger.Fatal(e.Start(":1323"))
 }
