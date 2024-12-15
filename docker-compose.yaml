@@ -18,7 +18,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: root
     ports:
-      - " :80"
+      - "5050:80"
 
 
       
