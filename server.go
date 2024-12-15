@@ -11,6 +11,7 @@ import (
 
 func main() {
 	e := echo.New()
+
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
@@ -18,6 +19,7 @@ func main() {
 	e.GET("/users/:id", handlers.GetUser)
 	e.PUT("/users/:id", handlers.UpdateUser)
 	e.DELETE("/users/:id", handlers.DeleteUser)
+	e.POST("/llm/groq", handlers.GroqHandler)
 	storage.InitDB()
 	e.Logger.Fatal(e.Start(":1323"))
 }
