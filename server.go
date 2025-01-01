@@ -1,16 +1,22 @@
 package main
 
 import (
-	"net/http"
-
 	"CENT_Notes/cmd/handlers"
 	"CENT_Notes/cmd/storage"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
 	e := echo.New()
+
+	// Add CORS middleware
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"http://localhost:3000"},
+		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
+	}))
 
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
@@ -32,6 +38,7 @@ func main() {
 	e.DELETE("/notes/:id/users/:userId", handlers.DeleteNote)
 	
 	e.POST("/llm/groq", handlers.GroqHandler)
+
 	storage.InitDB()
 	e.Logger.Fatal(e.Start(":1323"))
 }
