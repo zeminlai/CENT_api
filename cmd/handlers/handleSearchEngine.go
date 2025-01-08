@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/go-shiori/go-readability"
 	"github.com/labstack/echo/v4"
 )
 
@@ -14,6 +17,7 @@ type SearchResult struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	URL         string `json:"url"`
+	Content     string `json:"content"` // Add content field
 }
 
 type WebPageContent struct {
@@ -94,29 +98,38 @@ func HandleGoogleSearch(c echo.Context) error {
 	return c.JSON(http.StatusOK, results)
 }
 
+func limitWords(content string, limit int) string {
+	words := strings.Fields(content)
+	if len(words) <= limit {
+		return content
+	}
+	return strings.Join(words[:limit], " ") + "..."
+}
+
 // HandleWebScrape scrapes content from a selected search result
 func HandleWebScrape(c echo.Context) error {
-	url := c.QueryParam("url")
-	if url == "" {
+	urlStr := c.QueryParam("url")
+	if urlStr == "" {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "URL is required",
 		})
 	}
 
-	// Create HTTP client and request
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
+	// Parse URL string to url.URL
+	parsedURL, err := url.Parse(urlStr)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to create request",
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Invalid URL",
 		})
 	}
 
-	// Set User-Agent
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+	// Create HTTP client with timeout
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
 
-	// Perform the request
-	resp, err := client.Do(req)
+	// Fetch the webpage
+	resp, err := client.Get(urlStr)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Failed to fetch webpage",
@@ -124,26 +137,21 @@ func HandleWebScrape(c echo.Context) error {
 	}
 	defer resp.Body.Close()
 
-	// Parse the HTML document
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	// Parse using readability with correct URL type
+	article, err := readability.FromReader(resp.Body, parsedURL)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to parse HTML",
+			"error": "Failed to parse content",
 		})
 	}
 
-	// Extract content
-	title := doc.Find("title").Text()
-	content := doc.Find("body").Text()
+	// Limit content to 200 words
+	limitedContent := limitWords(article.TextContent, 500)
 
-	// Clean up content (remove extra whitespace)
-	content = strings.Join(strings.Fields(content), " ")
-
-	result := WebPageContent{
-		Title:   title,
-		Content: content,
-		URL:     url,
-	}
-
-	return c.JSON(http.StatusOK, result)
+	return c.JSON(http.StatusOK, SearchResult{
+		Title:       article.Title,
+		Description: article.Excerpt,
+		Content:     limitedContent,
+		URL:         urlStr,
+	})
 }
