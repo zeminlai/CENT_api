@@ -10,6 +10,7 @@ type Note struct {
 	Title     string    `json:"title"`
 	Content   string    `json:"content"`
 	UserId    int       `json:"user_id"`
+	DirectoryId *int      `json:"directory_id"` // Nullable foreign key
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
