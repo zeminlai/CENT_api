@@ -3,7 +3,9 @@ CREATE TABLE IF NOT EXISTS notes (
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     user_id INT NOT NULL,
+    directory_id INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (directory_id) REFERENCES directories(id) ON DELETE SET NULL
+); 

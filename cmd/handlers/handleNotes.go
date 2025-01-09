@@ -46,7 +46,7 @@ func GetUserNotes(c echo.Context) error {
 			"error": "Invalid user ID",
 		})
 	}
-	notes, err := repositories.GetUserNotes(userId)
+	notes, err := repositories.GetUserNotes(userId, nil)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": err.Error(),
