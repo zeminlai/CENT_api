@@ -4,13 +4,16 @@ import (
 	"CENT_Notes/cmd/models"
 	"CENT_Notes/cmd/repositories"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 
+	aai "github.com/AssemblyAI/assemblyai-go-sdk"
 	"github.com/labstack/echo/v4"
 )
 
@@ -19,6 +22,8 @@ type TranscriptionResponse struct {
 }
 
 func HandleAudioToNote(c echo.Context) error {
+	log.Println("Starting audio to note conversion process")
+	
 	// Get the uploaded file
 	file, err := c.FormFile("audio")
 	if err != nil {
@@ -52,6 +57,9 @@ func HandleAudioToNote(c echo.Context) error {
 		})
 	}
 
+	// After transcription
+	log.Printf("Transcription result: %s", transcription)
+
 	// Process with Groq to format the note
 	groqResponse, err := processWithGroq(transcription)
 	if err != nil {
@@ -59,6 +67,9 @@ func HandleAudioToNote(c echo.Context) error {
 			"error": fmt.Sprintf("Groq processing failed: %v", err),
 		})
 	}
+
+	// After Groq processing
+	log.Printf("Formatted note from Groq: %s", groqResponse)
 
 	// Create a new note
 	userId := c.QueryParam("userId")
@@ -82,41 +93,44 @@ func HandleAudioToNote(c echo.Context) error {
 		})
 	}
 
+	// After note creation
+	log.Printf("Note created successfully with ID: %d", newNote.Id)
+
 	return c.JSON(http.StatusOK, newNote)
 }
 
 func transcribeAudio(audioData []byte) (string, error) {
+	log.Println("Starting audio transcription with AssemblyAI")
+	tempFile, err := os.CreateTemp("", "audio-*")
+	if err != nil {
+			return "", fmt.Errorf("failed to create temporary file: %v", err)
+	}
+	defer os.Remove(tempFile.Name()) // Clean up temp file when done
+	
+	// Write audio data to temp file
+	if _, err := tempFile.Write(audioData); err != nil {
+			return "", fmt.Errorf("failed to write audio data to temp file: %v", err)
+	}
+	tempFile.Close()
+	f,err := os.Open(tempFile.Name())
+	if err != nil {
+		return "", fmt.Errorf("failed to open temp file: %v", err)
+	}
 	apiKey := os.Getenv("ASSEMBLY_API_KEY")
-	url := "https://api.assemblyai.com/v2/transcript"
+	client := aai.NewClient(apiKey)
 
-	// Create request
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(audioData))
+	// Create transcription request
+	transcript, err := client.Transcripts.TranscribeFromReader(context.Background(), f, nil)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create transcript: %v", err)
 	}
 
-	// Set headers
-	req.Header.Set("Authorization", apiKey)
-	req.Header.Set("Content-Type", "audio/mpeg")
-
-	// Send request
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	// Parse response
-	var result TranscriptionResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", err
-	}
-
-	return result.Text, nil
+	return *transcript.Text, nil
 }
 
 func processWithGroq(text string) (string, error) {
+	log.Println("Starting Groq processing")
+	
 	groqReq := GroqRequest{
 		Model: "llama3-70b-8192",
 		Messages: []Message{
@@ -146,6 +160,9 @@ func processWithGroq(text string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
+
+	// After response
+	log.Printf("Groq API response status: %d", resp.StatusCode)
 
 	var result map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {

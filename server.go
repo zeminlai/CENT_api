@@ -42,6 +42,7 @@ func main() {
 	
 	e.POST("/llm/groq", handlers.GroqHandler)
 
+	// Audio to note
 	e.POST("/audio-note", handlers.HandleAudioToNote)
 
 	e.Logger.Fatal(e.Start(":1323"))
