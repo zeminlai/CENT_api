@@ -10,6 +10,9 @@ import (
 )
 
 func main() {
+	// Initialize database first
+	storage.InitDB()
+
 	e := echo.New()
 
 	// Add CORS middleware
@@ -39,6 +42,8 @@ func main() {
 	
 	e.POST("/llm/groq", handlers.GroqHandler)
 
-	storage.InitDB()
+	// Audio to note
+	e.POST("/audio-note", handlers.HandleAudioToNote)
+
 	e.Logger.Fatal(e.Start(":1323"))
 }
