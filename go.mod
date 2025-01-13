@@ -3,19 +3,19 @@ module CENT_Notes
 go 1.23.2
 
 require (
+	github.com/AssemblyAI/assemblyai-go-sdk v1.9.0
 	github.com/PuerkitoBio/goquery v1.10.1
+	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/lib/pq v1.10.9
 )
 
 require (
-	github.com/AssemblyAI/assemblyai-go-sdk v1.9.0 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/coder/websocket v1.8.12 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
-	github.com/golang-migrate/migrate/v4 v4.18.1 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect

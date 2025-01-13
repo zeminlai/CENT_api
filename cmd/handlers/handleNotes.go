@@ -95,3 +95,19 @@ func DeleteNote(c echo.Context) error {
 	}
 	return c.NoContent(http.StatusNoContent)
 }
+
+func GetNotesByDirectory(c echo.Context) error {
+	directoryId, err := strconv.Atoi(c.Param("directoryId"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Invalid directory ID",
+		})
+	}
+	notes, err := repositories.GetNotesByDirectory(directoryId)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+	}
+	return c.JSON(http.StatusOK, notes)
+}

@@ -36,11 +36,17 @@ func main() {
 	// Notes routes
 	e.POST("/notes", handlers.CreateNote)
 	e.GET("/notes/:id", handlers.GetNote)
+	e.GET("/directory/:directoryId/notes", handlers.GetNotesByDirectory)
 	e.GET("/users/:userId/notes", handlers.GetUserNotes)
 	e.PUT("/notes/:id", handlers.UpdateNote)
 	e.DELETE("/notes/:id/users/:userId", handlers.DeleteNote)
 	
 	e.POST("/llm/groq", handlers.GroqHandler)
+
+	// Directories routes
+	e.POST("/directories", handlers.CreateDirectory)
+	e.GET("/users/:userId/directories", handlers.GetUserDirectories)
+	e.GET("/directories/:directoryId", handlers.GetDirectory)
 
 	// Audio to note
 	e.POST("/audio-note", handlers.HandleAudioToNote)

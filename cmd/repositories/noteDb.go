@@ -4,6 +4,7 @@ import (
 	"CENT_Notes/cmd/models"
 	"CENT_Notes/cmd/storage"
 	"database/sql"
+	"fmt"
 )
 
 // CreateNote inserts a new note into the database
@@ -38,6 +39,33 @@ func GetNote(id int) (models.Note, error) {
 		return note, err
 	}
 	return note, nil
+}
+
+func GetNotesByDirectory(directoryId int) ([]models.Note, error) {
+	db := storage.GetDB()
+	notes := make([]models.Note, 0)
+	sqlStatement := `
+		SELECT id, title, content, user_id, directory_id, created_at, updated_at 
+		FROM notes 
+		WHERE directory_id = $1`
+
+	rows, err := db.Query(sqlStatement, directoryId)
+	if err != nil {
+		return notes, fmt.Errorf("database query error: %v", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var note models.Note
+		err := rows.Scan(&note.Id, &note.Title, &note.Content, &note.UserId, &note.DirectoryId, &note.CreatedAt, &note.UpdatedAt)
+		if err != nil {
+			return notes, fmt.Errorf("error scanning note: %v", err)
+		}
+		notes = append(notes, note)
+	}
+
+	fmt.Printf("Found %d notes for directory ID: %d\n", len(notes), directoryId)
+	return notes, nil
 }
 
 // GetUserNotes retrieves all notes for a specific user, optionally filtered by directory
