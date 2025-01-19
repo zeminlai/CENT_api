@@ -1,14 +1,14 @@
 package handlers
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/labstack/echo/v4"
 )
+
+const utmPassage = `Universiti Teknologi Malaysia (UTM) is a leading public research university in Malaysia, specializing in engineering, science, and technology. Established in 1904 as a technical school, UTM has grown into a premier institution offering a wide range of undergraduate and postgraduate programs. With campuses in Johor Bahru and Kuala Lumpur, it is renowned for its innovative research, industry collaboration, and global partnerships, making it a hub for academic excellence and technological advancements in the region.`
 
 type SearchResult struct {
 	Title       string `json:"title"`
@@ -25,70 +25,32 @@ type WebPageContent struct {
 // HandleGoogleSearch performs Google search and returns top 10 results
 func HandleGoogleSearch(c echo.Context) error {
 	query := c.QueryParam("q")
-	if query == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Search query is required",
-		})
-	}
+	results := []SearchResult{}
 
-	// Format Google search URL
-	searchURL := fmt.Sprintf("https://www.google.com/search?q=%s", strings.ReplaceAll(query, " ", "+"))
-
-	// Create HTTP client and request
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", searchURL, nil)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to create request",
-		})
-	}
-
-	// Set User-Agent to avoid being blocked
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-
-	// Perform the request
-	resp, err := client.Do(req)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to fetch search results",
-		})
-	}
-	defer resp.Body.Close()
-
-	// Parse the HTML document
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to parse HTML",
-		})
-	}
-
-	var results []SearchResult
-	// Extract search results
-	doc.Find("div.g").Each(func(i int, s *goquery.Selection) {
-		if i >= 10 { // Limit to top 10 results
-			return
+	// Show all UTM results for both link click and search query
+	if query != "" || c.QueryParam("link") == "utm" {
+		results = []SearchResult{
+			{
+				Title:       "About UTM",
+				Description: utmPassage,
+				URL:         "https://en.wikipedia.org/wiki/University_of_Technology_Malaysia",
+			},
+			{
+				Title:       "UTM Johor Campus",
+				Description: "UTM's main campus in Johor Bahru spans over 1,222 hectares of land, offering state-of-the-art facilities and a vibrant academic environment.",
+				URL:         "https://www.utm.my/johor",
+			},
+			{
+				Title:       "UTM Kuala Lumpur Campus",
+				Description: "Located in the heart of Malaysia's capital, UTM's KL campus provides urban-centric education and research opportunities.",
+				URL:         "https://www.utm.my/kl",
+			},
+			{
+				Title:       "UTM International",
+				Description: "UTM welcomes international students and collaborations, fostering a diverse and global academic community.",
+				URL:         "https://www.utm.my/international",
+			},
 		}
-
-		title := s.Find("h3").Text()
-		description := s.Find("div.VwiC3b").Text()
-		url, _ := s.Find("a").Attr("href")
-
-		if title != "" && description != "" && url != "" {
-			results = append(results, SearchResult{
-				Title:       title,
-				Description: description,
-				URL:         url,
-			})
-		}
-	})
-
-	// Save results to JSON file
-	_, err = json.MarshalIndent(results, "", "  ")
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to create JSON",
-		})
 	}
 
 	return c.JSON(http.StatusOK, results)
